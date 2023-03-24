@@ -1,5 +1,6 @@
 package yt.devdroid.composeforresult.ui.note
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
@@ -38,139 +39,146 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import yt.devdroid.composeforresult.data.Note
+import yt.devdroid.composeforresult.ui.result.NoteSelectorContract
 
 @Composable
 fun NoteScreen(
-    onBackPressed: () -> Unit,
-    onClickCopyFromTemplate: () -> Unit
+  onBackPressed: () -> Unit
 ) {
 
-    val viewModel: NoteViewModel = viewModel()
+  val viewModel: NoteViewModel = viewModel()
 
-    val note by viewModel.note.collectAsState()
+  val launcher = rememberLauncherForActivityResult(
+    contract = NoteSelectorContract(),
+    onResult = { noteId ->
+      noteId?.also { id -> viewModel.setNoteTemplate(id) }
+    }
+  )
 
-    NoteScreen(
-        note = note,
-        updateNote = viewModel::updateNote,
-        onBackPressed = onBackPressed,
-        onSaveNote = { viewModel.saveNote(); onBackPressed() },
-        onClickCopyFromTemplate = onClickCopyFromTemplate
-    )
+  val note by viewModel.note.collectAsState()
+
+  NoteScreen(
+    note = note,
+    updateNote = viewModel::updateNote,
+    onBackPressed = onBackPressed,
+    onSaveNote = { viewModel.saveNote(); onBackPressed() },
+    onClickCopyFromTemplate = { launcher.launch(null) }
+  )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteScreen(
-    note: Note,
-    updateNote: (Note) -> Unit,
-    onBackPressed: () -> Unit,
-    onSaveNote: () -> Unit,
-    onClickCopyFromTemplate: () -> Unit,
-    modifier: Modifier = Modifier
+  note: Note,
+  updateNote: (Note) -> Unit,
+  onBackPressed: () -> Unit,
+  onSaveNote: () -> Unit,
+  onClickCopyFromTemplate: () -> Unit,
+  modifier: Modifier = Modifier
 ) {
 
-    val formatter = remember { SimpleDateFormat("MM/dd/yy", Locale.getDefault()) }
+  val formatter = remember { SimpleDateFormat("MM/dd/yy", Locale.getDefault()) }
 
-    Scaffold(
-        modifier = modifier.imePadding(),
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBackPressed) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
-                    }
-                },
-                actions = {
-                    if (!note.isSaved) {
-                        IconButton(onClick = onSaveNote, enabled = note.title.isNotBlank() && note.body.isNotBlank()) {
-                            Icon(imageVector = Icons.Default.Save, contentDescription = null)
-                        }
-                        
-                        IconButton(onClick = onClickCopyFromTemplate) {
-                            Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = null)
-                        }
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-              .padding(padding)
-              .fillMaxWidth()
-              .scrollable(rememberScrollableState { it }, orientation = Orientation.Vertical)
-        ) {
-            if (note.isSaved) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                      .fillMaxWidth()
-                      .padding(16.dp)
-                ) {
-                    Text(text = note.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = formatter.format(note.date), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Divider()
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = note.body,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier
-                      .weight(1f)
-                      .fillMaxWidth()
-                      .padding(16.dp)
-                )
-            } else {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically, modifier = Modifier
-                      .fillMaxWidth()
-                      .padding(16.dp)
-                ) {
-                    TextField(
-                        value = note.title,
-                        onValueChange = { updateNote(note.copy(title = it)) },
-                        textStyle = MaterialTheme.typography.headlineSmall,
-                        singleLine = true,
-                        maxLines = 1,
-                        colors = TextFieldDefaults.textFieldColors(
-                            containerColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                            errorIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        placeholder = { Text(text = "Untitled Note", style = MaterialTheme.typography.headlineSmall) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = formatter.format(Date()), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Divider()
-                Spacer(modifier = Modifier.height(8.dp))
-                TextField(
-                    value = note.body,
-                    onValueChange = { updateNote(note.copy(body = it)) },
-                    textStyle = MaterialTheme.typography.bodyMedium,
-                    placeholder = {
-                        Text(text = "Start Your note", style = MaterialTheme.typography.bodyMedium)
-                    },
-                    colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        errorIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    modifier = Modifier
-                      .weight(1f)
-                      .fillMaxWidth()
-                      .padding(16.dp)
-                )
+  Scaffold(
+    modifier = modifier.imePadding(),
+    topBar = {
+      TopAppBar(
+        title = {},
+        navigationIcon = {
+          IconButton(onClick = onBackPressed) {
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
+          }
+        },
+        actions = {
+          if (!note.isSaved) {
+            IconButton(onClick = onSaveNote, enabled = note.title.isNotBlank() && note.body.isNotBlank()) {
+              Icon(imageVector = Icons.Default.Save, contentDescription = null)
             }
+
+            IconButton(onClick = onClickCopyFromTemplate) {
+              Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = null)
+            }
+          }
         }
+      )
     }
+  ) { padding ->
+    Column(
+      modifier = Modifier
+        .padding(padding)
+        .fillMaxWidth()
+        .scrollable(rememberScrollableState { it }, orientation = Orientation.Vertical)
+    ) {
+      if (note.isSaved) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+        ) {
+          Text(text = note.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+          Spacer(modifier = Modifier.width(8.dp))
+          Text(text = formatter.format(note.date), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Divider()
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+          text = note.body,
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()
+            .padding(16.dp)
+        )
+      } else {
+        Row(
+          verticalAlignment = Alignment.CenterVertically, modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+        ) {
+          TextField(
+            value = note.title,
+            onValueChange = { updateNote(note.copy(title = it)) },
+            textStyle = MaterialTheme.typography.headlineSmall,
+            singleLine = true,
+            maxLines = 1,
+            colors = TextFieldDefaults.textFieldColors(
+              containerColor = Color.Transparent,
+              disabledIndicatorColor = Color.Transparent,
+              errorIndicatorColor = Color.Transparent,
+              focusedIndicatorColor = Color.Transparent,
+              unfocusedIndicatorColor = Color.Transparent
+            ),
+            placeholder = { Text(text = "Untitled Note", style = MaterialTheme.typography.headlineSmall) },
+            modifier = Modifier.weight(1f),
+          )
+          Spacer(modifier = Modifier.width(8.dp))
+          Text(text = formatter.format(Date()), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Divider()
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+          value = note.body,
+          onValueChange = { updateNote(note.copy(body = it)) },
+          textStyle = MaterialTheme.typography.bodyMedium,
+          placeholder = {
+            Text(text = "Start Your note", style = MaterialTheme.typography.bodyMedium)
+          },
+          colors = TextFieldDefaults.textFieldColors(
+            containerColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            errorIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+          ),
+          modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()
+            .padding(16.dp)
+        )
+      }
+    }
+  }
 }
