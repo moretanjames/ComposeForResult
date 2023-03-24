@@ -9,12 +9,12 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface NoteDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertNote(note: NoteEntity): Long
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  suspend fun insertNote(note: NoteEntity): Long
 
-    @Query("SELECT * FROM notes")
-    fun getNotes(): Flow<List<NoteEntity>>
+  @Query("SELECT * FROM notes ORDER BY date DESC")
+  fun getNotes(): Flow<List<NoteEntity>>
 
-    @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
-    suspend fun getNoteById(id: Long): NoteEntity
+  @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
+  suspend fun getNoteById(id: Long): NoteEntity
 }
