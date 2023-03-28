@@ -16,18 +16,12 @@ private val navArguments: List<NamedNavArgument> = listOf(
 
 private fun getRouteWithNoteId(noteId: Long?) = getRouteWithArgs(noteRoute, mapOf(NOTE_ID_ARG to noteId))
 
-fun NavGraphBuilder.addNoteScreen(
-  onBackPress: () -> Unit,
-  onClickCopyFromTemplate: () -> Unit
-) {
+fun NavGraphBuilder.addNoteScreen(onBackPress: () -> Unit) {
   composable(
     route = noteRoute,
     arguments = navArguments
   ) {
-    NoteScreen(
-      onBackPressed = onBackPress,
-      onClickCopyFromTemplate = onClickCopyFromTemplate
-    )
+    NoteScreen(onBackPressed = onBackPress)
   }
 }
 

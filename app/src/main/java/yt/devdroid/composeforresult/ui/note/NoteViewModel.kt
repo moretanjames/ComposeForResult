@@ -16,23 +16,27 @@ import yt.devdroid.composeforresult.data.NoteRepo
 
 class NoteViewModel(application: Application, savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
 
-    private val repo = NoteRepo(application)
+  private val repo = NoteRepo(application)
 
-    private val existingNoteId = savedStateHandle.getStateFlow<String?>(NOTE_ID_ARG, null)
+  private val existingNoteId = savedStateHandle.getStateFlow<String?>(NOTE_ID_ARG, null)
 
-    private val existingNote = existingNoteId.map { it?.let { runCatching { repo.getNoteById(it.toLong()) }.getOrNull() } }
+  private val existingNote = existingNoteId.map { it?.let { runCatching { repo.getNoteById(it.toLong()) }.getOrNull() } }
 
-    private val createdNote = MutableStateFlow(Note())
+  private val createdNote = MutableStateFlow(Note())
 
-    val note = combine(existingNote, createdNote) { existing, created ->
-        existing ?: created
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), Note())
+  val note = combine(existingNote, createdNote) { existing, created ->
+    existing ?: created
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), Note())
 
-    fun saveNote() = viewModelScope.launch(Dispatchers.IO) {
-        repo.insertNote(note.value)
-    }
+  fun saveNote() = viewModelScope.launch(Dispatchers.IO) {
+    repo.insertNote(note.value)
+  }
 
-    fun updateNote(note: Note) = viewModelScope.launch {
-        createdNote.emit(note)
-    }
+  fun updateNote(note: Note) = viewModelScope.launch {
+    createdNote.emit(note)
+  }
+
+  fun copyNote(note: Note) = viewModelScope.launch {
+    createdNote.emit(createdNote.value.copy(title = note.title, body = note.body))
+  }
 }
